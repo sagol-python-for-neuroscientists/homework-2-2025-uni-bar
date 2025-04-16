@@ -38,6 +38,12 @@ data4 = (Agent("Robert", Condition.SICK),)
 
 data5 = ()
 
+def print_comparisons(code_result, true_result, data):
+    if (code_result != true_result) or DEBUG_MODE:
+        print("code_result", code_result)
+        print("true_result", true_result)
+        print("data", data)
+        print("code_result == true_result", code_result == true_result)
 
 def test_data0():
     code_result = set(meetup(data0))
@@ -53,12 +59,14 @@ def test_data0():
         Agent(name="Emma", category=Condition.HEALTHY),
         Agent(name="Vaccine", category=Condition.DYING),
     }
+    print_comparisons(code_result, true_result, data0)
     assert code_result == true_result
 
 
 def test_data1():
     code_result = set(meetup(data1))
     true_result = set(data1)
+    print_comparisons(code_result, true_result, data1)
     assert code_result == true_result
 
 
@@ -72,6 +80,7 @@ def test_data2():
         Agent("Zelda4", Condition.DEAD),
         Agent("Zelda5", Condition.HEALTHY),
     }
+    print_comparisons(code_result, true_result, data2)
     assert code_result == true_result
 
 
@@ -85,24 +94,28 @@ def test_data3():
         Agent("Lora", Condition.HEALTHY),
         Agent("Monica", Condition.SICK),
     }
+    print_comparisons(code_result, true_result, data3)
     assert code_result == true_result
 
 
 def test_data4():
     code_result = set(meetup(data4))
     true_result = {Agent("Robert", Condition.SICK)}
+    print_comparisons(code_result, true_result, data4)
     assert code_result == true_result
 
 
 def test_data5():
     code_result = meetup(data5)
     true_result = []
+    print_comparisons(code_result, true_result, data5)
     assert code_result == true_result
 
 
 if __name__ == "__main__":
     methods = [f"test_data{num}" for num in range(6)]
     errors = []
+    DEBUG_MODE = False
 
     for method in methods:
         try:

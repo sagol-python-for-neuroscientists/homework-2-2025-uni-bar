@@ -41,8 +41,7 @@ def meet(agent1: Agent, agent2: Agent) -> (Agent, Agent):
                Agent(agent2.name, improve(agent2.category))
 
     # if any of the agents' condition is_worsen, worsen their condition
-    if any(is_worsen(agent.category) for agent in (agent1, agent2)) and not all(
-            agent.category == Condition.SICK for agent in (agent1, agent2)):
+    if any(is_worsen(agent.category) for agent in (agent1, agent2)):
         return Agent(agent1.name, worsen(agent1.category)), \
                Agent(agent2.name, worsen(agent2.category))
 
@@ -50,30 +49,18 @@ def meet(agent1: Agent, agent2: Agent) -> (Agent, Agent):
     return agent1, agent2
 
 
-def meeting_pair_generator(agents: list):
-    """Generator for yielding meeting pairs and skipping over those unable to meet.
-
-    Yields tuples (agent1, agent2) when both agents are available to meet;
-    if an agent is not able to meet, yields (None, agent), for logging
+def meeting_index_generator(agents: list):
+    """yielding pairs of indices (i, j) from agents
+    that are able to meet (i.e., not healthy or dead).
     """
-    it = iter(agents)
-    for agt in it:
-        if is_unable_to_meet(agt.category):
-            yield None, agt  # this agent cannot meet.
-        else:
-            # We have an available agent and we looking for the next available partner
-            partner = None
-            for candidate in it:
-                if is_unable_to_meet(candidate.category):
-                    yield candidate, None # this agent cannot meet too.
-                else:
-                    partner = candidate
-                    break
-            if partner is not None:
-                yield agt, partner
-            else:
-                # No partner found; yield the lone agent.
-                yield None, agt
+    # indices of agents that can meet.
+    available = [i for i, agent in enumerate(agents) if not is_unable_to_meet(agent.category)]
+    # if DEBUG_MODE is defined and True, print the available agents, without error if DEBUG_MODE is not defined.
+    if DEBUG_MODE:
+        print(f"available: {available}")
+    # Yield them in pairs (if odd, the last available agent remains unpaired)
+    for k in range(0, len(available) - 1, 2):
+        yield available[k], available[k+1]
 
 def meetup(agent_listing: tuple) -> list:
     """Model the outcome of the meetings of pairs of agents.
@@ -99,35 +86,33 @@ def meetup(agent_listing: tuple) -> list:
         A list of Agents with their 'category' field changed according to the result
         of the meeting.
     """
-    updated = []
-    cache = []
-    pairs = meeting_pair_generator(list(agent_listing))
-    for a, b in pairs:
-        if a is None:
-            # b is an agent that cannot meet or did not get a partner.
-            updated.append(b)
-        elif b is None:
-            cache.append(a)
-        else:
-            # a and b are both available to meet.
-            new_a, new_b = meet(a, b)
-            # if the cache is not empty, we should extend the update to be new_a, cache[0], new_b and clear cache
-            if len(cache) > 0:
-                updated.extend([new_a, cache[0], new_b])
-                cache.clear()
-            else:
-                updated.extend([new_a, new_b])
+    updated = list(agent_listing)  # work with a mutable copy in the same order
+    for i, j in meeting_index_generator(updated):
+        # i and j are indices of two agents available for a meeting.
+        new_a, new_b = meet(updated[i], updated[j])
+        updated[i] = new_a
+        updated[j] = new_b
     return updated
 
+DEBUG_MODE = False
 if __name__ == "__main__":
     # Define a sample tuple of agents.
     agents = (
-        Agent("Mark", Condition.SICK),
-        Agent("Mork", Condition.HEALTHY),
-        Agent("Harry", Condition.DYING),
-        Agent("Cure", Condition.CURE),
-        Agent("Lora", Condition.SICK),
-        Agent("Monica", Condition.SICK),
+        Agent("Aragorn", Condition.CURE),
+        Agent("Frodo", Condition.DYING),
+        Agent("Brand", Condition.DYING),
+        Agent("Deirdre", Condition.SICK),
+        Agent("Sauron", Condition.SICK),
+        Agent("Saruman", Condition.DYING),
+        Agent("Gandalf", Condition.CURE),
+        Agent("Corwin", Condition.CURE),
+        Agent("Legolas", Condition.SICK),
+        Agent("Thorin", Condition.SICK),
+        Agent("Drogon", Condition.DYING),
+        Agent("khalisee", Condition.DYING),
+        Agent("Galadriel", Condition.HEALTHY),
+        Agent("Elrohir", Condition.DEAD),
+        Agent("Merlin", Condition.CURE),
     )
     # Calculate the updated statuses.
     updated_agents = meetup(agents)
@@ -135,17 +120,3 @@ if __name__ == "__main__":
     for agent in updated_agents:
         print(f"{agent.name}: {agent.category.name}")
 
-# Agent("Aragorn", Condition.CURE),
-# Agent("Frodo", Condition.DYING),
-# Agent("Brand", Condition.DYING),
-# Agent("Deirdre", Condition.SICK),
-# Agent("Sauron", Condition.SICK),
-# Agent("Saruman", Condition.DYING),
-# Agent("Gandalf", Condition.CURE),
-# Agent("Corwin", Condition.CURE),
-# Agent("Legolas", Condition.SICK),
-# Agent("Thorin", Condition.SICK),
-# Agent("Drogon", Condition.DYING),
-# Agent("khalisee", Condition.DYING),
-# Agent("Galadriel", Condition.HEALTHY),
-# Agent("Elrohir", Condition.DEAD)
